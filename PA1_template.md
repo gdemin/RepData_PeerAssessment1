@@ -1,13 +1,9 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
-```{r echo=TRUE}
+
+```r
 suppressMessages(library(dplyr))
 
 # read data
@@ -18,14 +14,23 @@ unlink(file_with_data) # delete unzipped file
 
 # quick look at data structure
 str(activity)
+```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 # make field with datetime format
 activity$posix_date = strptime(activity$date,format = "%Y-%m-%d")
 activity$time = format(strptime(gsub(" ","0",format(activity$interval,width=4)),"%H%M"),"%H:%M")
 ```
 ## What is mean total number of steps taken per day?
-```{r echo=TRUE}
 
+```r
 # aggregate number of steps by day
 aggregated_activity = select(activity,date,steps) %>% group_by(date) %>% summarize(steps=sum(steps,na.rm = TRUE))
 
@@ -39,18 +44,20 @@ legend("topright",
        lty=2,lwd=2,
        col=c("blue","green"),
        bty = "n")
-
 ```
+
+![plot of chunk unnamed-chunk-2](./PA1_template_files/figure-html/unnamed-chunk-2.png) 
 
 ##### Table 1. Number of steps
 
 Statistic   | Steps per day
 -------|-------------
-Mean   | `r steps_mean`
-Median | `r steps_median`
+Mean   | 9354
+Median | 10395
 
 ## What is the average daily activity pattern?
-```{r echo=TRUE}
+
+```r
 aggregated_activity_by_interval = select(activity,time,steps) %>% group_by(time) %>% summarize(steps=mean(steps,na.rm = TRUE))
 
 interval_max_steps = max(aggregated_activity_by_interval$steps)
@@ -61,10 +68,11 @@ with(aggregated_activity_by_interval,
      main="Daily activity pattern",
      xlab = "Time",
      ylab = "Average number of steps per 5-minute interval"))
-
 ```
 
-So we may conclude that average maximum activity is at `r interval_max` with `r round(interval_max_steps)` average number of steps .
+![plot of chunk unnamed-chunk-3](./PA1_template_files/figure-html/unnamed-chunk-3.png) 
+
+So we may conclude that average maximum activity is at 08:35 with 206 number of steps .
 
 
 ## Imputing missing values
