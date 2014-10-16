@@ -5,6 +5,10 @@
 
 ```r
 suppressMessages(library(dplyr))
+library(ggplot2)
+
+# Set locale for correct (US) weekdays abbreviation
+invisible(Sys.setlocale("LC_TIME", "us"))
 
 # read data
 setwd("c:/Users/gregory/Documents/!Projects/Trainings/Coursera - Reproducible Research/RepData - PA1/")
@@ -24,9 +28,13 @@ str(activity)
 ```
 
 ```r
-# make field with datetime format
-activity$posix_date = strptime(activity$date,format = "%Y-%m-%d")
+# make fields with time format
 activity$time = format(strptime(gsub(" ","0",format(activity$interval,width=4)),"%H%M"),"%H:%M")
+day_of_week = weekdays(strptime(activity$date,format = "%Y-%m-%d"))
+# variable with Weekday/Weekend value
+activity$week = factor(ifelse(day_of_week %in% c("Sunday","Saturday"),"Weekend","Weekday"))
+
+rm(day_of_week) # we don't need this var anymore
 ```
 ## What is mean total number of steps taken per day?
 
@@ -36,7 +44,7 @@ aggregated_activity = select(activity,date,steps) %>% group_by(date) %>% summari
 
 steps_mean = round(mean(aggregated_activity$steps))
 steps_median = median(aggregated_activity$steps)
-hist(aggregated_activity$steps, main="Number of steps per day",xlab="")
+hist(aggregated_activity$steps, main="Fig 1. Number of steps per day",xlab="")
 abline(v=steps_mean,col="blue",lwd=2,lty=2)
 abline(v=steps_median,col="green",lwd=2,lty=2)
 legend("topright",
@@ -62,21 +70,116 @@ aggregated_activity_by_interval = select(activity,time,steps) %>% group_by(time)
 
 interval_max_steps = max(aggregated_activity_by_interval$steps)
 interval_max = aggregated_activity_by_interval[which.max(aggregated_activity_by_interval$steps),"time"]
-with(aggregated_activity_by_interval,
-     plot(strptime(time,"%H:%M"),steps,
-     type="l",
-     main="Daily activity pattern",
-     xlab = "Time",
-     ylab = "Average number of steps per 5-minute interval"))
+qplot(strptime(time,"%H:%M"),steps,
+      geom="line",
+      data = aggregated_activity_by_interval,
+      main="Fig 2. Daily activity pattern",
+      xlab = "Time of the day",
+      ylab = "Average number of steps per 5-minute interval") + theme_bw()
 ```
 
 ![plot of chunk unnamed-chunk-3](./PA1_template_files/figure-html/unnamed-chunk-3.png) 
 
-So we may conclude that average maximum activity is at 08:35 with 206 number of steps .
+So we may conclude that average maximum activity is at 08:35 with 206 average number of steps per interval.
 
 
 ## Imputing missing values
 
+```r
+# compute number of cases with missing values
+rows_with_na = nrow(activity) - sum(complete.cases(activity))
+```
 
+There are 2304 rows with NA. It is about 13% of cases. Strategy for filling NAs - we replace NAs with median number of steps for this time from others non-missing dates. We will use averages from weekdays for imputing weekdays missing values and accordingly weekends for weekends.
+
+
+```r
+# compute medians
+activity_medians = group_by(activity,week,interval) %>% summarise(median_steps=median(steps,na.rm=TRUE))
+activity_nona = left_join(activity,activity_medians) 
+```
+
+```
+## Joining by: c("interval", "week")
+```
+
+```r
+# replace missing values
+activity_nona = mutate(activity_nona,steps=ifelse(is.na(steps),median_steps,steps))
+# check if we replace all NA. Should be TRUE.
+sum(is.na(activity_nona$steps)) == 0
+```
+
+```
+## [1] TRUE
+```
+
+```r
+rm(activity_medians)
+
+# plot histogramm and compute mean/median without NAs
+aggregated_activity_nona = select(activity_nona,date,steps) %>% group_by(date) %>% summarize(steps=sum(steps,na.rm = TRUE))
+
+steps_mean_nona = round(mean(aggregated_activity_nona$steps))
+steps_median_nona = median(aggregated_activity_nona$steps)
+hist(aggregated_activity_nona$steps, main="Fig 3. Number of steps per day (imputed NAs)",xlab="")
+abline(v=steps_mean_nona,col="blue",lwd=2,lty=2)
+abline(v=steps_median_nona,col="green",lwd=2,lty=2)
+legend("topright",
+       c(sprintf("Mean (%s steps)",steps_mean_nona),sprintf("Median (%s steps)",steps_median_nona)),
+       lty=2,lwd=2,
+       col=c("blue","green"),
+       bty = "n")
+```
+
+![plot of chunk unnamed-chunk-5](./PA1_template_files/figure-html/unnamed-chunk-5.png) 
+
+##### Table 2. Number of steps. Value comparison with imputed NA.
+
+Statistic   | Steps per day | Steps per day (imputed NA's)
+-------|--------------------|------------------------------
+Mean   | 9354     | 9546
+Median | 10395   | 10395
+
+There is no significant changes in distribution of steps. Medians are the same. Let's check difference in means with t-test.
+
+
+```r
+t.test(aggregated_activity$steps,aggregated_activity_nona$steps)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  aggregated_activity$steps and aggregated_activity_nona$steps
+## t = -0.202, df = 119.6, p-value = 0.8403
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -2074  1690
+## sample estimates:
+## mean of x mean of y 
+##      9354      9546
+```
+p-value is greater than 0.05 so there is no significant difference in means.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```r
+aggregated_activity_by_interval_nona = activity_nona %>% group_by(week,time) %>% summarize(steps=mean(steps,na.rm = TRUE))
+
+
+qplot(strptime(time,"%H:%M"),steps,
+      facets = week ~ .,
+      geom = "line",
+      data = aggregated_activity_by_interval_nona,
+      main="Fig 4. Daily activity pattern",
+      xlab = "Time of the day",
+      ylab = "Average number of steps per 5-minute interval") + theme_minimal()
+```
+
+![plot of chunk unnamed-chunk-7](./PA1_template_files/figure-html/unnamed-chunk-7.png) 
+So we can make a conclusion that pattern beetween weekdays and weekends are similar. But on weekdays activity is higher - number of steps are greater than on weekends.
+
+### That's all. Thank you for your attention:)
+
