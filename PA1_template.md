@@ -6,6 +6,7 @@
 ```r
 suppressMessages(library(dplyr))
 library(ggplot2)
+library(scales)
 
 # Set locale for correct (US) weekdays abbreviation
 invisible(Sys.setlocale("LC_TIME", "us"))
@@ -75,7 +76,9 @@ qplot(strptime(time,"%H:%M"),steps,
       data = aggregated_activity_by_interval,
       main="Fig 2. Daily activity pattern",
       xlab = "Time of the day",
-      ylab = "Average number of steps per 5-minute interval") + theme_bw()
+      ylab = "Average number of steps per 5-minute interval") + 
+    scale_x_datetime(labels = date_format("%H:00"),breaks = date_breaks("2 hour"))+ 
+    theme_bw()
 ```
 
 ![plot of chunk unnamed-chunk-3](./PA1_template_files/figure-html/unnamed-chunk-3.png) 
@@ -175,10 +178,13 @@ qplot(strptime(time,"%H:%M"),steps,
       data = aggregated_activity_by_interval_nona,
       main="Fig 4. Daily activity pattern",
       xlab = "Time of the day",
-      ylab = "Average number of steps per 5-minute interval") + theme_minimal()
+      ylab = "Average number of steps per 5-minute interval")  + 
+    scale_x_datetime(labels = date_format("%H:00"),breaks = date_breaks("2 hour")) +
+    theme_bw()
 ```
 
 ![plot of chunk unnamed-chunk-7](./PA1_template_files/figure-html/unnamed-chunk-7.png) 
+
 So we can make a conclusion that pattern beetween weekdays and weekends are similar. But on weekdays activity is higher - number of steps are greater than on weekends.
 
 ### That's all. Thank you for your attention:)
