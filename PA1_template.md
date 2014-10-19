@@ -34,6 +34,7 @@ str(activity)
 # make fields with time format
 activity$time = format(strptime(gsub(" ","0",format(activity$interval,width=4)),"%H%M"),"%H:%M")
 day_of_week = weekdays(strptime(activity$date,format = "%Y-%m-%d"))
+
 # variable with Weekday/Weekend value
 activity$week = factor(ifelse(day_of_week %in% c("Sunday","Saturday"),"Weekend","Weekday"))
 
@@ -69,6 +70,7 @@ Median | 10765
 ## What is the average daily activity pattern?
 
 ```r
+# aggregation by time (interval)
 aggregated_activity_by_interval = select(na.omit(activity),time,steps) %>% group_by(time) %>% summarize(steps=mean(steps,na.rm = TRUE))
 
 
@@ -178,6 +180,7 @@ p-value is greater than 0.05 so there is no significant difference in means.
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```r
+# aggregation by weekday and time (interval)
 aggregated_activity_by_interval_nona = activity_nona %>% group_by(week,time) %>% summarize(steps=mean(steps,na.rm = TRUE))
 
 

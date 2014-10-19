@@ -81,6 +81,7 @@ str(activity)</code></pre>
 <pre class="r"><code># make fields with time format
 activity$time = format(strptime(gsub(&quot; &quot;,&quot;0&quot;,format(activity$interval,width=4)),&quot;%H%M&quot;),&quot;%H:%M&quot;)
 day_of_week = weekdays(strptime(activity$date,format = &quot;%Y-%m-%d&quot;))
+
 # variable with Weekday/Weekend value
 activity$week = factor(ifelse(day_of_week %in% c(&quot;Sunday&quot;,&quot;Saturday&quot;),&quot;Weekend&quot;,&quot;Weekday&quot;))
 
@@ -126,7 +127,8 @@ legend(&quot;topright&quot;,
 </div>
 <div id="what-is-the-average-daily-activity-pattern" class="section level2">
 <h2>What is the average daily activity pattern?</h2>
-<pre class="r"><code>aggregated_activity_by_interval = select(na.omit(activity),time,steps) %&gt;% group_by(time) %&gt;% summarize(steps=mean(steps,na.rm = TRUE))
+<pre class="r"><code># aggregation by time (interval)
+aggregated_activity_by_interval = select(na.omit(activity),time,steps) %&gt;% group_by(time) %&gt;% summarize(steps=mean(steps,na.rm = TRUE))
 
 
 qplot(strptime(time,&quot;%H:%M&quot;),steps,
@@ -214,7 +216,8 @@ legend(&quot;topright&quot;,
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
-<pre class="r"><code>aggregated_activity_by_interval_nona = activity_nona %&gt;% group_by(week,time) %&gt;% summarize(steps=mean(steps,na.rm = TRUE))
+<pre class="r"><code># aggregation by weekday and time (interval)
+aggregated_activity_by_interval_nona = activity_nona %&gt;% group_by(week,time) %&gt;% summarize(steps=mean(steps,na.rm = TRUE))
 
 
 qplot(strptime(time,&quot;%H:%M&quot;),steps,
